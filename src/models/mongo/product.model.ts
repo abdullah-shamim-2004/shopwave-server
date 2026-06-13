@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import mongoose, { Schema, type InferSchemaType } from "mongoose";
 
 // Product Schema
 const productSchema = new Schema(
@@ -33,6 +33,9 @@ const productSchema = new Schema(
     },
     discountPercent: {
       type: Number,
+      defaut: 0,
+      min: 0,
+      max: 100,
     },
     stock: {
       type: Number,
@@ -77,5 +80,22 @@ const productSchema = new Schema(
   {
     timestamps: true,
     toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
+
+// Type of product
+export type IProduct = InferSchemaType<typeof productSchema> & {
+  _id: mongoose.Types.ObjectId;
+};
+// calculate final price of the product
+productSchema.virtual("finalPrice").get(function () {
+  const baseprice = this.price || 0;
+  const discount = this.discountPercent || 0;
+
+  if (discount > 0) {
+    const discountPrice = baseprice - (baseprice * discount) / 100;
+    return Math.round(discountPrice * 100) / 100;
+  }
+  return baseprice;
+});
