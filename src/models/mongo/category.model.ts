@@ -3,7 +3,7 @@ import mongoose, {
   type HydratedDocument,
   type InferSchemaType,
 } from "mongoose";
-
+import slugify from "slugify";
 const categorySchema = new Schema(
   {
     name: {
@@ -25,21 +25,18 @@ export type ICategory = InferSchemaType<typeof categorySchema> & {
 };
 // 2. Define a Document type that includes Mongoose instance methods
 type CategoryDocument = HydratedDocument<ICategory>;
+
 // Pre save middleware
-categorySchema.pre(
-  "save",
-  function (
-    this: CategoryDocument,
-    next: (err?: mongoose.CallbackError) => void,
-  ) {
-    if (this.isModified("name")) {
-      this.slug = this.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-    }
-    next();
-  },
-);
+categorySchema.pre("save", function (this: CategoryDocument) {
+  if (!this.isModified("name")) return;
+  if (this.isModified("name")) {
+    const baseSlug = slugify(this.name, {
+      lower: true,
+      strict: true,
+      trim: true,
+    });
+    this.slug = `${baseSlug}-${Date.now()}`;
+  }
+});
 // Create the category model
 export default mongoose.model("Category", categorySchema);

@@ -1,4 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
+import slugify from "slugify";
 
 // Product Schema
 const productSchema = new Schema(
@@ -98,4 +99,17 @@ productSchema.virtual("finalPrice").get(function () {
     return Math.round(discountPrice * 100) / 100;
   }
   return baseprice;
+});
+
+// Generate slug for product
+productSchema.pre("save", function () {
+  if (!this.isModified("name")) return;
+  if (this.isModified("name")) {
+    const baseSlug = slugify(this.name, {
+      lower: true,
+      strict: true,
+      trim: true,
+    });
+    this.slug = `${baseSlug}-${Date.now()}`;
+  }
 });
